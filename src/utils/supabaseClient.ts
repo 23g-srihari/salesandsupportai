@@ -1,3 +1,4 @@
+// src/utils/supabaseClient.ts
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -12,11 +13,9 @@ if (!supabaseAnonKey) {
 }
 
 // Client for client-side browser use (anon key)
-// This is the default export if you just import 'supabase' from this module
 export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
 // Admin client for server-side use (service_role key)
-// IMPORTANT: This client bypasses RLS and should only be used on the server, never exposed to the client.
 let supabaseAdminSingleton: SupabaseClient | null = null;
 
 if (supabaseServiceRoleKey) {
@@ -27,7 +26,6 @@ if (supabaseServiceRoleKey) {
     }
   });
 } else {
-  // This warning is important for debugging missing service key issues
   console.warn(
     'Supabase service role key (SUPABASE_SERVICE_ROLE_KEY) is not available in the environment. ' +
     'The `supabaseAdmin` client will not be initialized with admin privileges. ' +
@@ -38,7 +36,6 @@ if (supabaseServiceRoleKey) {
 export const supabaseAdmin = supabaseAdminSingleton;
 
 // Helper function to get the admin client, throws error if not initialized
-// Useful in server-side code to ensure the admin client is ready.
 export function getSupabaseAdmin(): SupabaseClient {
   if (!supabaseAdminSingleton) {
     throw new Error(
