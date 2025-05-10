@@ -27,8 +27,9 @@ export default function SalesAI() {
     sortOrder: 'asc'
   });
   const [showDriveFiles, setShowDriveFiles] = useState(false);
+  const [userRequestedCount, setUserRequestedCount] = useState(6); // State for user's desired count, now default 6
 
-  const handleSearch = async (query: string) => {
+  const handleSearch = async (query: string, documentId?: string) => {
     setIsLoading(true);
     setError(null);
     setHasSearched(true);
@@ -37,15 +38,22 @@ export default function SalesAI() {
     const startTime = performance.now();
 
     try {
+      const payload: any = {
+        query,
+        filters: currentFilters,
+        requestedMatchCount: userRequestedCount // Send the user's desired count
+      };
+
+      if (documentId) {
+        payload.documentId = documentId;
+      }
+
       const response = await fetch('/api/sales-ai/search', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          query,
-          filters: currentFilters
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();

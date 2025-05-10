@@ -25,21 +25,11 @@ export async function POST(req: NextRequest) {
     const dbRowsToInsert = []; 
 
     for (const file of files) {
-      // This section reconstructs the logic from your DriveFiles.tsx's handleUpload
-      // Ensure file object structure matches what DriveFiles.tsx prepares in 'filesToUpload'
-      // Specifically 'name', 'path' (for original_drive_id), 'mime_type', 'size_bytes',
-      // and the logic for 'content' which is used to derive 'fileDataForUpload' and 'actualContentType'.
-      // For this API route, we expect 'content' to have been handled by the client to prepare 'fileDataForUpload'
-      // if we were uploading from this API route.
-      // However, based on your DriveFiles.tsx, the 'content' (text or base64) is already in 'file.content'.
-      // This API route is currently designed to take that pre-fetched content and upload it.
-
       let fileDataForUpload: Buffer | string | null = null;
       let actualContentType = file.mime_type;
-      let storagePath = null; // Will be set upon successful storage upload
-      let uploadError = null; // To store any error during storage upload
+      let storagePath = null; 
+      let uploadError = null;
 
-      // Sanitize filename for storage path construction
       const safeFileName = (file.name || 'untitled_file').replace(/[^a-zA-Z0-9._-]/g, '_');
       const userPrefix = uploaded_by ? `${uploaded_by.replace(/[^a-zA-Z0-9@._-]/g, '_')}/` : 'unknown_user/';
       const fileNameInBucket = `${userPrefix}${Date.now()}_${safeFileName}`;
@@ -84,8 +74,6 @@ export async function POST(req: NextRequest) {
             uploadError = 'Storage upload succeeded but returned no path.';
           }
         } else if (!uploadError && fileDataForUpload === null) {
-          // This case implies file.content was present but didn't match handled types.
-          // uploadError should have been set by the type checks above.
           if(!uploadError) uploadError = 'File content was not in a recognized format for upload.';
           console.warn(`UPLOAD API: ${uploadError} for file ${file.name}`);
         }
@@ -94,20 +82,16 @@ export async function POST(req: NextRequest) {
         uploadError = e.message || 'Exception during storage processing.';
       }
       
-      // Prepare row for 'uploaded_files' table
       const rowToInsert = {
         name: file.name || 'untitled_file',
-        original_drive_id: file.path || null, // 'path' from client becomes 'original_drive_id'
+        original_drive_id: file.path || null, 
         storage_bucket: BUCKET_NAME,
-        storage_path: storagePath, // Null if storage upload failed
+        storage_path: storagePath, 
         mime_type: file.mime_type || null,
         size_bytes: file.size_bytes || null,
         uploaded_by: uploaded_by || null,
-        status: storagePath ? 'pending_extraction' : 'upload_to_storage_failed', // Initial status
+        status: storagePath ? 'pending_extraction' : 'upload_to_storage_failed', 
         error_message: uploadError || null,
-        // extracted_text is not set here; it's populated by the Edge Function.
-        // Ensure all other NOT NULL columns in 'uploaded_files' (without a DEFAULT value) are handled
-        // or ensure they allow NULLs if data might not always be present.
       };
       dbRowsToInsert.push(rowToInsert);
     }
@@ -120,7 +104,7 @@ export async function POST(req: NextRequest) {
     console.log("UPLOAD API: Attempting to insert rows into 'uploaded_files' table:", JSON.stringify(dbRowsToInsert, null, 2));
     
     const { data: insertedDbData, error: dbError } = await supabase
-        .from('uploaded_files') // Make sure this table name is 100% correct
+        .from('uploaded_files') 
         .insert(dbRowsToInsert)
         .select();
 
@@ -142,25 +126,21 @@ export async function POST(req: NextRequest) {
         db_error_code: dbError.code,
         db_error_details: dbError.details,
         db_error_hint: dbError.hint,
-        // raw_db_error: JSON.stringify(dbError) // Be cautious sending full error object to client
       }, { status: 500 });
     }
     
     console.log("UPLOAD API: Successfully inserted into 'uploaded_files'. Records count:", insertedDbData?.length);
-    // console.log("UPLOAD API: Inserted data:", JSON.stringify(insertedDbData, null, 2));
 
-    // ----- Invoke Edge Function -----
     if (insertedDbData) {
       for (const record of insertedDbData) {
-        // Ensure record has a storage_path and the status indicates readiness for extraction
         if (record.storage_path && record.status === 'pending_extraction') { 
           console.log(`UPLOAD API: Invoking salesai-extracted-text for uploaded_files.id: ${record.id}, storage_path: ${record.storage_path}`);
           supabase.functions.invoke('salesai-extracted-text', {
             body: {
               recordId: record.id,
               storagePath: record.storage_path,
-              bucketName: record.storage_bucket, // Pass bucket name from the record
-              mimeType: record.mime_type     // Pass mime type from the record
+              bucketName: record.storage_bucket, 
+              mimeType: record.mime_type     
             },
           }).then(response => {
             if (response.error) {
@@ -194,8 +174,6 @@ export async function POST(req: NextRequest) {
     } else if (typeof err === 'string') {
         message = err;
     }
-    // Consider logging err.stack for more details on unexpected errors
-    // console.error('UPLOAD API: Overall catch block error stack:', err.stack);
-    return NextResponse.json({ error: message /*, raw_error: JSON.stringify(err) */ }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
