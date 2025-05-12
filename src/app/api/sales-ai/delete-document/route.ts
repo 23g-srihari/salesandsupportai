@@ -2,9 +2,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/utils/supabaseClient';
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"; // Adjust path if your authOptions is elsewhere
+import { authOptions } from "@/utils/authOptions"; // Import authOptions from the utility file
 
 const BUCKET_NAME = 'user_document_uploads'; // Ensure this matches your actual bucket name
+// temporary comment
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
