@@ -3,7 +3,7 @@ import { serve, ConnInfo } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // --- IMPORTANT: Update this version marker when you deploy ---
-console.log('SalesAI Analyze Text (Gemini) Edge Function initializing (v1.2 - Tuned Embedding Text)...');
+// console.log('SalesAI Analyze Text (Gemini) Edge Function initializing (v1.2 - Tuned Embedding Text)...');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -33,7 +33,7 @@ const GOOGLE_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/mo
 async function callGeminiToIdentifyProducts(text: string): Promise<string[] | null> {
     if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not set.");
     if (!text || text.trim() === "") {
-        console.log("Text for product identification is empty, returning empty array.");
+        // console.log("Text for product identification is empty, returning empty array.");
         return [];
     }
 
@@ -49,7 +49,7 @@ async function callGeminiToIdentifyProducts(text: string): Promise<string[] | nu
     ---
     JSON Array Output:`;
 
-    console.log(`Calling Gemini (${GEMINI_LIST_PRODUCTS_MODEL_ID}) to identify products. Text length: ${text.length}`);
+    // console.log(`Calling Gemini (${GEMINI_LIST_PRODUCTS_MODEL_ID}) to identify products. Text length: ${text.length}`);
     const requestUrl = `${GOOGLE_API_BASE_URL}/${GEMINI_LIST_PRODUCTS_MODEL_ID}:generateContent?key=${GEMINI_API_KEY}`;
     const response = await fetch(requestUrl, {
         method: 'POST',
@@ -61,30 +61,30 @@ async function callGeminiToIdentifyProducts(text: string): Promise<string[] | nu
     });
     if (!response.ok) {
         const errorBody = await response.text();
-        console.error("Gemini API error (Product Identification):", response.status, errorBody);
+        // console.error("Gemini API error (Product Identification):", response.status, errorBody);
         throw new Error(`Gemini product identification API request failed (${response.status}): ${errorBody}`);
     }
     const result = await response.json();
     if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
         const jsonString = result.candidates[0].content.parts[0].text;
-        console.log("Gemini product identification raw JSON string:", jsonString);
+        // console.log("Gemini product identification raw JSON string:", jsonString);
         try {
             const cleaned = jsonString.replace(/^```json\s*|\s*```$/g, '').trim();
             const productNames = JSON.parse(cleaned);
             if (Array.isArray(productNames) && productNames.every(item => typeof item === 'string')) {
-                console.log("Successfully parsed product names from Gemini:", productNames);
+                // console.log("Successfully parsed product names from Gemini:", productNames);
                 return productNames;
             } else {
-                console.error("Gemini product identification response was not a valid array of strings:", cleaned);
+                // console.error("Gemini product identification response was not a valid array of strings:", cleaned);
                 return []; 
             }
         } catch (e) {
             const error = e instanceof Error ? e : new Error(String(e));
-            console.error("Failed to parse JSON for product names:", error.message, "Raw:", jsonString);
+            // console.error("Failed to parse JSON for product names:", error.message, "Raw:", jsonString);
             return [];
         }
     }
-    console.error("Unexpected Gemini product identification response structure:", result);
+    // console.error("Unexpected Gemini product identification response structure:", result);
     throw new Error("Unexpected Gemini product identification response.");
 }
 
@@ -115,7 +115,7 @@ async function callGeminiForSingleProductAnalysis(productName: string, fullConte
     ---
     JSON Output for product "${productName}":`;
 
-    console.log(`Calling Gemini (${GEMINI_ANALYSIS_MODEL_ID}) for analysis of "${productName}" (prompt expects string prices and product_type, includes snippet).`);
+    // console.log(`Calling Gemini (${GEMINI_ANALYSIS_MODEL_ID}) for analysis of "${productName}" (prompt expects string prices and product_type, includes snippet).`);
     const requestUrl = `${GOOGLE_API_BASE_URL}/${GEMINI_ANALYSIS_MODEL_ID}:generateContent?key=${GEMINI_API_KEY}`;
     const response = await fetch(requestUrl, { 
         method: 'POST',
@@ -127,37 +127,37 @@ async function callGeminiForSingleProductAnalysis(productName: string, fullConte
     });
     if (!response.ok) {
         const errorBody = await response.text();
-        console.error(`Gemini API error (Single Product Analysis for ${productName}):`, response.status, errorBody);
+        // console.error(`Gemini API error (Single Product Analysis for ${productName}):`, response.status, errorBody);
         throw new Error(`Gemini single product analysis API request failed (${response.status}): ${errorBody}`);
     }
     const result = await response.json();
     if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
         const jsonString = result.candidates[0].content.parts[0].text;
-        console.log(`Gemini single product analysis raw JSON for "${productName}":`, jsonString);
+        // console.log(`Gemini single product analysis raw JSON for "${productName}":`, jsonString);
         try {
             const cleaned = jsonString.replace(/^```json\s*|\s*```$/g, '').trim();
             const parsedJson = JSON.parse(cleaned);
-            console.log(`Successfully parsed JSON for "${productName}".`);
+            // console.log(`Successfully parsed JSON for "${productName}".`);
             return parsedJson;
         } catch (e) {
             const error = e instanceof Error ? e : new Error(String(e));
-            console.error(`Failed to parse JSON for single product analysis of "${productName}":`, error.message, "Raw:", jsonString);
+            // console.error(`Failed to parse JSON for single product analysis of "${productName}":`, error.message, "Raw:", jsonString);
             throw new Error(`Failed to parse JSON for ${productName}: ${error.message}. Raw: ${jsonString.substring(0,100)}`);
         }
     }
-    console.error(`Unexpected Gemini single product analysis response structure for ${productName}:`, result);
+    // console.error(`Unexpected Gemini single product analysis response structure for ${productName}:`, result);
     throw new Error(`Unexpected Gemini analysis response for ${productName}.`);
 }
 
 async function callGeminiForEmbedding(textToEmbed: string): Promise<number[] | null> {
     if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY for embedding not set.");
     if (!textToEmbed || textToEmbed.trim() === "") {
-        console.log("Text for embedding is empty. Skipping embedding call.");
+        // console.log("Text for embedding is empty. Skipping embedding call.");
         return null;
     }
     const trimmedText = textToEmbed.substring(0, 8000); // Respect model limits
 
-    console.log(`Calling Gemini (${GEMINI_EMBEDDING_MODEL_ID}) for embedding. Text length: ${trimmedText.length}`);
+    // console.log(`Calling Gemini (${GEMINI_EMBEDDING_MODEL_ID}) for embedding. Text length: ${trimmedText.length}`);
     const requestUrl = `${GOOGLE_API_BASE_URL}/${GEMINI_EMBEDDING_MODEL_ID}:embedContent?key=${GEMINI_API_KEY}`;
     const response = await fetch(requestUrl, { 
         method: 'POST',
@@ -166,15 +166,15 @@ async function callGeminiForEmbedding(textToEmbed: string): Promise<number[] | n
     });
     if (!response.ok) {
         const errorBody = await response.text();
-        console.error("Gemini API error (Embedding):", response.status, errorBody);
+        // console.error("Gemini API error (Embedding):", response.status, errorBody);
         throw new Error(`Gemini embedding API request failed (${response.status}): ${errorBody}`);
     }
     const result = await response.json();
     if (result.embedding?.values && Array.isArray(result.embedding.values)) {
-        console.log(`Embedding received. Vector dimension: ${result.embedding.values.length}`);
+        // console.log(`Embedding received. Vector dimension: ${result.embedding.values.length}`);
         return result.embedding.values;
     }
-    console.error("Unexpected Gemini embedding response structure. Full response:", JSON.stringify(result));
+    // console.error("Unexpected Gemini embedding response structure. Full response:", JSON.stringify(result));
     throw new Error("Unexpected Gemini embedding response or missing values.");
 }
 
@@ -187,32 +187,32 @@ serve(async (req: Request, _connInfo: ConnInfo): Promise<Response> => {
     const supabaseUrlEnv = Deno.env.get('SUPABASE_URL');
     const serviceKeyEnv = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     if (!supabaseUrlEnv || !serviceKeyEnv || !GEMINI_API_KEY) {
-         console.error(`Missing env vars in ${functionName}.`);
+         // console.error(`Missing env vars in ${functionName}.`);
          return createJsonResponse({ error: 'Server configuration error.' }, 500, corsHeaders);
     }
     supabaseAdminClient = createClient(supabaseUrlEnv, serviceKeyEnv, { auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false }});
     
     if (!req.body) {
-        console.error(`Request body is null for ${functionName}.`);
+        // console.error(`Request body is null for ${functionName}.`);
         return createJsonResponse({ error: 'Request body missing' }, 400, corsHeaders);
     }
     try { 
         requestPayload = await req.json(); 
     } catch (e) { 
         const error = e instanceof Error ? e : new Error(String(e));
-        console.error(`Invalid JSON in request body for ${functionName}: ${error.message}`);
+        // console.error(`Invalid JSON in request body for ${functionName}: ${error.message}`);
         return createJsonResponse({ error: 'Invalid JSON' }, 400, corsHeaders); 
     }
     
     const { recordId: uploadedFileId, extractedText } = requestPayload; 
-    console.log(`Analyzing text for uploaded_files.id: ${uploadedFileId}. Extracted text length: ${extractedText?.length || 0}`);
+    // console.log(`Analyzing text for uploaded_files.id: ${uploadedFileId}. Extracted text length: ${extractedText?.length || 0}`);
 
     if (!uploadedFileId || typeof extractedText !== 'string' ) { // Allow empty extractedText initially
         await supabaseAdminClient.from('uploaded_files').update({ status: 'analysis_failed', error_message: 'Missing recordId or extractedText for analysis.' }).eq('id', uploadedFileId || 'unknown'); // Fallback for unknown ID
         return createJsonResponse({ error: 'Missing recordId or extractedText for analysis.' }, 400, corsHeaders);
     }
     if (extractedText.trim() === "") {
-        console.log(`Extracted text for uploaded_file_id ${uploadedFileId} is empty. Marking as analysis_skipped_empty_text.`);
+        // console.log(`Extracted text for uploaded_file_id ${uploadedFileId} is empty. Marking as analysis_skipped_empty_text.`);
         await supabaseAdminClient.from('uploaded_files').update({ status: 'analysis_skipped_empty_text', error_message: 'Extracted text was empty.' }).eq('id', uploadedFileId);
         return createJsonResponse({ success: true, message: 'Analysis skipped, extracted text was empty.' }, 200, corsHeaders);
     }
@@ -224,7 +224,7 @@ serve(async (req: Request, _connInfo: ConnInfo): Promise<Response> => {
     let productsFailedAnalysisCount = 0;
 
     if (productNames && productNames.length > 0) {
-        console.log(`Identified ${productNames.length} products for analysis from uploaded_file ${uploadedFileId}:`, productNames.join(', '));
+        // console.log(`Identified ${productNames.length} products for analysis from uploaded_file ${uploadedFileId}:`, productNames.join(', '));
         await supabaseAdminClient.from('uploaded_files').update({ status: 'individual_product_analysis_inprogress' }).eq('id', uploadedFileId);
 
         for (const productName of productNames) {
@@ -234,7 +234,7 @@ serve(async (req: Request, _connInfo: ConnInfo): Promise<Response> => {
             let individualStatus = 'analysis_failed'; // Default for this product iteration
 
             try {
-                console.log(`Analyzing product "${productName}" from uploaded_file ${uploadedFileId}...`);
+                // console.log(`Analyzing product "${productName}" from uploaded_file ${uploadedFileId}...`);
                 analysisData = await callGeminiForSingleProductAnalysis(productName, extractedText);
                 
                 if (analysisData) {
@@ -259,18 +259,18 @@ serve(async (req: Request, _connInfo: ConnInfo): Promise<Response> => {
                     }
                     
                     textForEmbeddingInput = textForEmbeddingInput.trim();
-                    console.log(`Constructed textForEmbeddingInput for "${productName}": "${textForEmbeddingInput.substring(0, 100)}..."`);
+                    // console.log(`Constructed textForEmbeddingInput for "${productName}": "${textForEmbeddingInput.substring(0, 100)}..."`);
 
 
                     if (textForEmbeddingInput.length > 0) {
                         productEmbeddingVec = await callGeminiForEmbedding(textForEmbeddingInput);
                     } else {
-                        console.warn(`Constructed text for embedding for "${productName}" was empty. Trying full extractedText as fallback.`);
+                        // console.warn(`Constructed text for embedding for "${productName}" was empty. Trying full extractedText as fallback.`);
                         if (extractedText && extractedText.trim().length > 0) {
-                             console.log(`Using full extractedText as fallback for embedding for "${productName}"`);
+                             // console.log(`Using full extractedText as fallback for embedding for "${productName}"`);
                              productEmbeddingVec = await callGeminiForEmbedding(extractedText);
                         } else {
-                            console.warn(`No text available to generate embedding for product: ${productName}`);
+                            // console.warn(`No text available to generate embedding for product: ${productName}`);
                         }
                     }
                     individualStatus = 'analysis_complete';
@@ -281,7 +281,7 @@ serve(async (req: Request, _connInfo: ConnInfo): Promise<Response> => {
                 }
             } catch (e) {
                 const error = e instanceof Error ? e : new Error(String(e));
-                console.error(`Error analyzing product "${productName}" from uploaded_file ${uploadedFileId}:`, error.message);
+                // console.error(`Error analyzing product "${productName}" from uploaded_file ${uploadedFileId}:`, error.message);
                 individualErrorMsg = error.message;
                 productsFailedAnalysisCount++;
             }
@@ -305,7 +305,7 @@ serve(async (req: Request, _connInfo: ConnInfo): Promise<Response> => {
                     individual_analysis_error: individualErrorMsg,
                 });
             if (insertError) {
-                console.error(`Failed to insert analyzed product "${productName}" into DB for uploaded_file ${uploadedFileId}:`, insertError);
+                // console.error(`Failed to insert analyzed product "${productName}" into DB for uploaded_file ${uploadedFileId}:`, insertError);
                 productsFailedAnalysisCount++; // Also count DB insert failure
                 // Potentially update the master file record with this specific error too
                 await supabaseAdminClient.from('uploaded_files').update({
@@ -321,17 +321,17 @@ serve(async (req: Request, _connInfo: ConnInfo): Promise<Response> => {
         return createJsonResponse({ success: true, message: `Analysis of ${productNames.length} products finished. Success: ${productsSuccessfullyAnalyzedCount}, Failed: ${productsFailedAnalysisCount}` }, 200, corsHeaders);
     
     } else if (productNames && productNames.length === 0) {
-        console.log(`No distinct products identified in uploaded_file ${uploadedFileId}. Nothing to analyze further.`);
+        // console.log(`No distinct products identified in uploaded_file ${uploadedFileId}. Nothing to analyze further.`);
         await supabaseAdminClient.from('uploaded_files').update({ status: 'analysis_no_products_found', error_message: null }).eq('id', uploadedFileId);
         return createJsonResponse({ success: true, message: 'No distinct products identified for analysis.' }, 200, corsHeaders);
     } else { 
-         console.error(`Product identification step failed for uploaded_file ${uploadedFileId}. 'productNames' is null.`);
+         // console.error(`Product identification step failed for uploaded_file ${uploadedFileId}. 'productNames' is null.`);
          await supabaseAdminClient.from('uploaded_files').update({ status: 'analysis_failed', error_message: 'Product identification step failed (result was null).' }).eq('id', uploadedFileId);
          return createJsonResponse({ error: 'Product identification failed during analysis.' }, 500, corsHeaders);
     }
   } catch (error) {
     const e = error instanceof Error ? e : new Error(String(error));
-    console.error(`General error in ${functionName} for uploaded_file ${requestPayload?.recordId}:`, e.message, e.stack);
+    // console.error(`General error in ${functionName} for uploaded_file ${requestPayload?.recordId}:`, e.message, e.stack);
      if (requestPayload && requestPayload.recordId) {
         await supabaseAdminClient.from('uploaded_files')
             .update({ status: 'analysis_failed', error_message: `General function error: ${e.message}` })

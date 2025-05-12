@@ -150,7 +150,7 @@ export default function SalesAI() {
             isLoading={isLoading}
             hasSearched={hasSearched}
             onProductSelect={(product) => {
-              console.log('Selected product:', product);
+              // console.log('Selected product:', product);
             }}
           />
         </div>

@@ -42,11 +42,11 @@ export default function SearchBar({ onSearch, isLoading, onDriveClick }: SearchB
       if (data.success) {
         setDocumentList(data.documents || []);
       } else {
-        console.error("SearchBar: Failed to fetch documents -", data.error);
+        // console.error("SearchBar: Failed to fetch documents -", data.error);
         setDocumentList([]);
       }
     } catch (error) {
-      console.error("SearchBar: Error fetching documents -", error);
+      // console.error("SearchBar: Error fetching documents -", error);
       setDocumentList([]);
     }
     setIsLoadingDocs(false);
@@ -95,11 +95,11 @@ export default function SearchBar({ onSearch, isLoading, onDriveClick }: SearchB
     const queryToActOn = selectedDoc ? actualSearchQuery.trim() : inputValue.trim();
 
     if (!queryToActOn && selectedDoc) {
-        console.log("SearchBar: Document selected, but query is empty.");
+        // console.log("SearchBar: Document selected, but query is empty.");
         return;
     }
     if (inputValue.toLowerCase().trim() === TRIGGER_PHRASE_FOR_DOC_LIST.toLowerCase() && !selectedDoc && !queryToActOn) {
-        console.log("SearchBar: Trigger phrase typed, waiting for document selection or query.");
+        // console.log("SearchBar: Trigger phrase typed, waiting for document selection or query.");
         if(!isLoadingDocs && documentList.length === 0) fetchDocumentsForSelection();
         setShowDocSuggestions(true);
         return;
@@ -112,7 +112,7 @@ export default function SearchBar({ onSearch, isLoading, onDriveClick }: SearchB
             onSearch(queryToActOn);
         }
     } else if (!selectedDoc && inputValue.trim() === "") {
-        console.log("SearchBar: Input is empty.");
+        // console.log("SearchBar: Input is empty.");
     }
   };
 
@@ -137,11 +137,11 @@ export default function SearchBar({ onSearch, isLoading, onDriveClick }: SearchB
             handleClearSelectedDoc();
           }
         } else {
-          console.error("Error deleting document:", data.error);
+          // console.error("Error deleting document:", data.error);
           toast.error(`Failed to delete document: ${data.error || 'Unknown error'}`);
         }
       } catch (err: any) {
-        console.error("Exception when deleting document:", err);
+        // console.error("Exception when deleting document:", err);
         toast.error(`Failed to delete document: ${err.message || 'Network error'}`);
       }
       setDeletingDocId(null);

@@ -5,7 +5,7 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 
 // Initialize Gemini API
 const apiKey = process.env.GEMINI_API_KEY;
-console.log('API Key configured:', !!apiKey);
+// console.log('API Key configured:', !!apiKey);
 
 const genAI = new GoogleGenerativeAI(apiKey || '');
 
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     }
 
     if (!apiKey) {
-      console.error('Gemini API key is missing');
+      // console.error('Gemini API key is missing');
       return NextResponse.json(
         { error: 'Gemini API key is not configured. Please check your .env.local file.' },
         { status: 500 }
@@ -106,18 +106,18 @@ export async function POST(request: Request) {
     }`;
 
     try {
-      console.log('Initializing Gemini model...');
+      // console.log('Initializing Gemini model...');
       const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-      console.log('Generating content...');
+      // console.log('Generating content...');
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 
-      console.log('Raw API Response:', text);
+      // console.log('Raw API Response:', text);
 
       if (!text) {
-        console.error('Empty response from Gemini API');
+        // console.error('Empty response from Gemini API');
         throw new Error('No response from Gemini API');
       }
 
@@ -125,44 +125,44 @@ export async function POST(request: Request) {
         // Try to find JSON in the response
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
-          console.error('No JSON found in response:', text);
+          // console.error('No JSON found in response:', text);
           throw new Error('No valid JSON found in response');
         }
 
         const jsonStr = jsonMatch[0];
-        console.log('Extracted JSON string:', jsonStr);
+        // console.log('Extracted JSON string:', jsonStr);
 
         // Parse the response
         const parsedResponse = JSON.parse(jsonStr);
-        console.log('Parsed Response:', parsedResponse);
+        // console.log('Parsed Response:', parsedResponse);
 
         // Validate the response structure
         if (!parsedResponse.results || !Array.isArray(parsedResponse.results)) {
-          console.error('Invalid response structure:', parsedResponse);
+          // console.error('Invalid response structure:', parsedResponse);
           throw new Error('Invalid response structure from API');
         }
 
         // Validate exact product count
         if (parsedResponse.results.length !== requestedCount) {
-          console.error(`Invalid product count. Expected ${requestedCount} products, got ${parsedResponse.results.length}`);
+          // console.error(`Invalid product count. Expected ${requestedCount} products, got ${parsedResponse.results.length}`);
           throw new Error(`Invalid product count. Expected ${requestedCount} products.`);
         }
 
         return NextResponse.json(parsedResponse);
       } catch (parseError) {
-        console.error('Failed to parse API response:', text);
-        console.error('Parse error details:', parseError);
+        // console.error('Failed to parse API response:', text);
+        // console.error('Parse error details:', parseError);
         throw new Error('Failed to parse API response. Please try again.');
       }
     } catch (apiError) {
-      console.error('Gemini API error:', apiError);
+      // console.error('Gemini API error:', apiError);
       return NextResponse.json(
         { error: 'Failed to generate search results. Please try again.' },
         { status: 500 }
       );
     }
   } catch (error) {
-    console.error('Search error:', error);
+    // console.error('Search error:', error);
     return NextResponse.json(
       { error: 'Failed to process search request. Please try again.' },
       { status: 500 }

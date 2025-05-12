@@ -5,7 +5,7 @@ import { supabase } from '@/utils/supabaseClient';
 
 // Initialize Gemini API
 const apiKey = process.env.GEMINI_API_KEY;
-console.log('API Key configured:', !!apiKey);
+// console.log('API Key configured:', !!apiKey);
 
 const genAI = new GoogleGenerativeAI(apiKey || '');
 const GEMINI_EMBEDDING_MODEL_ID_FOR_QUERY = "text-embedding-004"; // Or your chosen model
@@ -13,16 +13,16 @@ const GOOGLE_API_BASE_URL_FOR_EMBEDDING = "https://generativelanguage.googleapis
 
 async function getQueryEmbedding(queryText: string): Promise<number[] | null> {
   if (!apiKey) {
-    console.error("getQueryEmbedding: GEMINI_API_KEY is not configured.");
+    // console.error("getQueryEmbedding: GEMINI_API_KEY is not configured.");
     return null;
   }
   if (!queryText || queryText.trim() === "") {
-    console.log("getQueryEmbedding: Query text is empty. Skipping embedding call.");
+    // console.log("getQueryEmbedding: Query text is empty. Skipping embedding call.");
     return null;
   }
 
   const trimmedText = queryText.substring(0, 8000); // Respect model limits
-  console.log(`getQueryEmbedding: Calling Gemini (${GEMINI_EMBEDDING_MODEL_ID_FOR_QUERY}) for query: "${trimmedText.substring(0,50)}..."`);
+  // console.log(`getQueryEmbedding: Calling Gemini (${GEMINI_EMBEDDING_MODEL_ID_FOR_QUERY}) for query: "${trimmedText.substring(0,50)}..."`);
   const requestUrl = `${GOOGLE_API_BASE_URL_FOR_EMBEDDING}/${GEMINI_EMBEDDING_MODEL_ID_FOR_QUERY}:embedContent?key=${apiKey}`;
   
   try {
@@ -34,20 +34,20 @@ async function getQueryEmbedding(queryText: string): Promise<number[] | null> {
 
     if (!response.ok) {
         const errorBody = await response.text();
-        console.error("getQueryEmbedding: Gemini API error (Embedding):", response.status, errorBody);
+        // console.error("getQueryEmbedding: Gemini API error (Embedding):", response.status, errorBody);
         // Consider not throwing here but returning null so the main flow can decide how to handle it.
         return null; 
     }
     const result = await response.json();
     if (result.embedding?.values && Array.isArray(result.embedding.values)) {
-        console.log(`getQueryEmbedding: Embedding received. Vector dimension: ${result.embedding.values.length}`);
+        // console.log(`getQueryEmbedding: Embedding received. Vector dimension: ${result.embedding.values.length}`);
         return result.embedding.values;
     }
-    console.error("getQueryEmbedding: Unexpected Gemini embedding response structure. Full response:", JSON.stringify(result));
+    // console.error("getQueryEmbedding: Unexpected Gemini embedding response structure. Full response:", JSON.stringify(result));
     return null;
   } catch (error) {
     const e = error instanceof Error ? error : new Error(String(error));
-    console.error("getQueryEmbedding: Exception during embedding API call:", e.message);
+    // console.error("getQueryEmbedding: Exception during embedding API call:", e.message);
     return null;
   }
 }
@@ -141,7 +141,7 @@ function parseDocumentQuery(query: string): ParsedDocQuery {
   }
 
 
-  console.log("Parsed Query:", { keywords, minPrice, maxPrice, category });
+  // console.log("Parsed Query:", { keywords, minPrice, maxPrice, category });
   return { keywords, minPrice, maxPrice, category };
 }
 
@@ -158,15 +158,15 @@ export async function POST(request: Request) {
     }
 
     if (documentId) {
-      console.log(`Vector search within document ID: ${documentId} for query: "${query}"`);
+      // console.log(`Vector search within document ID: ${documentId} for query: "${query}"`);
       try {
         const queryEmbedding = await getQueryEmbedding(query);
         const parsedQuery = parseDocumentQuery(query); // Call parser to get category and other info
 
         if (!queryEmbedding) {
-          console.error('Failed to generate query embedding. Cannot perform vector search.');
+          // console.error('Failed to generate query embedding. Cannot perform vector search.');
           // Fallback to text-based filtering if embedding fails, now using the parsedQuery from above.
-          console.log('Falling back to text-based filtering due to embedding failure.');
+          // console.log('Falling back to text-based filtering due to embedding failure.');
           // const parsedQuery = parseDocumentQuery(query); // Already called above
           let queryBuilder = supabase
             .from('analyzed_products')
@@ -277,13 +277,13 @@ export async function POST(request: Request) {
         // TODO: If parseDocumentQuery also reliably extracts minPrice/maxPrice from the query,
         // and your SQL function is updated to handle them, you could pass them here too.
 
-        console.log("Calling RPC 'match_products_in_document' with params:", {
-            match_document_id: rpcParams.match_document_id,
-            match_threshold: rpcParams.match_threshold,
-            match_count: rpcParams.match_count,
-            filter_product_type: rpcParams.filter_product_type, // Log new param
-            query_embedding_snippet: rpcParams.query_embedding.substring(0,50) + "..."
-        });
+        // console.log("Calling RPC 'match_products_in_document' with params:", {
+        //     match_document_id: rpcParams.match_document_id,
+        //     match_threshold: rpcParams.match_threshold,
+        //     match_count: rpcParams.match_count,
+        //     filter_product_type: rpcParams.filter_product_type, // Log new param
+        //     query_embedding_snippet: rpcParams.query_embedding.substring(0,50) + "..."
+        // });
 
         const { data: rpcData, error: rpcError } = await supabase.rpc(
           'match_products_in_document',
@@ -291,7 +291,7 @@ export async function POST(request: Request) {
         );
 
         if (rpcError) {
-          console.error('Error calling RPC match_products_in_document:', rpcError);
+          // console.error('Error calling RPC match_products_in_document:', rpcError);
           return NextResponse.json(
             { error: `Failed to search products in document: ${rpcError.message}` },
             { status: 500 }
@@ -299,11 +299,11 @@ export async function POST(request: Request) {
         }
 
         if (!rpcData) {
-          console.log('No products returned from RPC for document search.');
+          // console.log('No products returned from RPC for document search.');
           return NextResponse.json({ results: [] });
         }
 
-        console.log(`RPC returned ${rpcData.length} products.`);
+        // console.log(`RPC returned ${rpcData.length} products.`);
 
         // Map RPC results (which should match analyzed_products structure + similarity) to SearchResult structure
         const results: SearchResult[] = rpcData.map((product: any) => {
@@ -389,7 +389,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ results });
 
       } catch (error: any) {
-        console.error('Error processing search within document:', error);
+        // console.error('Error processing search within document:', error);
         return NextResponse.json(
           { error: 'Failed to process search within the document.' },
           { status: 500 }
@@ -398,7 +398,7 @@ export async function POST(request: Request) {
     }
 
     if (!apiKey) {
-      console.error('Gemini API key is missing');
+      // console.error('Gemini API key is missing');
       return NextResponse.json(
         { error: 'Gemini API key is not configured. Please check your .env.local file.' },
         { status: 500 }
@@ -522,18 +522,18 @@ export async function POST(request: Request) {
        - Keep it under 2-3 sentences`;
 
     try {
-      console.log('Initializing Gemini model...');
+      // console.log('Initializing Gemini model...');
       const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-      console.log('Generating content...');
+      // console.log('Generating content...');
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 
-      console.log('Raw API Response:', text);
+      // console.log('Raw API Response:', text);
 
       if (!text) {
-        console.error('Empty response from Gemini API');
+        // console.error('Empty response from Gemini API');
         throw new Error('No response from Gemini API');
       }
 
@@ -541,20 +541,20 @@ export async function POST(request: Request) {
         // Try to find JSON in the response
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
-          console.error('No JSON found in response:', text);
+          // console.error('No JSON found in response:', text);
           throw new Error('No valid JSON found in response');
         }
 
         const jsonStr = jsonMatch[0];
-        console.log('Extracted JSON string:', jsonStr);
+        // console.log('Extracted JSON string:', jsonStr);
 
         // Parse the response
         const parsedResponse = JSON.parse(jsonStr);
-        console.log('Parsed Response:', parsedResponse);
+        // console.log('Parsed Response:', parsedResponse);
 
         // Validate the response structure
         if (!parsedResponse.results || !Array.isArray(parsedResponse.results)) {
-          console.error('Invalid response structure:', parsedResponse);
+          // console.error('Invalid response structure:', parsedResponse);
           throw new Error('Invalid response structure from API');
         }
 
@@ -571,7 +571,7 @@ export async function POST(request: Request) {
           // We don't further trim here unless a specific requestedMatchCount from client is lower.
           let finalResultsForPriceFilter = parsedResponse.results;
           if (typeof requestedMatchCount === 'number' && requestedMatchCount > 0 && finalResultsForPriceFilter.length > requestedMatchCount) {
-            console.log(`Price filter query: Trimming Gemini results from ${finalResultsForPriceFilter.length} to client requested ${requestedMatchCount}`);
+            // console.log(`Price filter query: Trimming Gemini results from ${finalResultsForPriceFilter.length} to client requested ${requestedMatchCount}`);
             finalResultsForPriceFilter = finalResultsForPriceFilter.slice(0, requestedMatchCount);
           }
           if (finalResultsForPriceFilter.length === 0) {
@@ -602,39 +602,39 @@ export async function POST(request: Request) {
         // If client specified requestedMatchCount, we prioritize that for the final trim.
         const expectedByPrompt = countFromQuery || 6; // What the prompt asked Gemini to aim for.
         if (finalResults.length !== expectedByPrompt && !(typeof requestedMatchCount === 'number' && requestedMatchCount > 0) ) {
-            console.warn(`Gemini product count mismatch for global search. Prompt expected ${expectedByPrompt}, Gemini returned ${finalResults.length}.`);
+            // console.warn(`Gemini product count mismatch for global search. Prompt expected ${expectedByPrompt}, Gemini returned ${finalResults.length}.`);
         }
 
         if (finalResults.length > finalDesiredCount) {
-          console.log(`Global search: Trimming Gemini results from ${finalResults.length} to ${finalDesiredCount}`);
+          // console.log(`Global search: Trimming Gemini results from ${finalResults.length} to ${finalDesiredCount}`);
           finalResults = finalResults.slice(0, finalDesiredCount);
         } else if (finalResults.length < finalDesiredCount && (typeof requestedMatchCount === 'number' && requestedMatchCount > 0)){
           // If client requested more than Gemini returned (and Gemini didn't hit its own cap based on prompt)
           // there isn't much to do other than return what Gemini gave.
           // We could log this, but for now, we just return the fewer items.
-          console.log(`Global search: Gemini returned ${finalResults.length}, client/query desired ${finalDesiredCount}. Returning available results.`);
+          // console.log(`Global search: Gemini returned ${finalResults.length}, client/query desired ${finalDesiredCount}. Returning available results.`);
         }
 
         if (finalResults.length === 0 && query) { // Avoid error if original query was valid but yielded no results
-             console.log("Global search: No products found after Gemini processing and filtering.");
+             // console.log("Global search: No products found after Gemini processing and filtering.");
              //  throw new Error('No products found matching your query.'); // Or just return empty
         }
 
         return NextResponse.json({ results: finalResults });
       } catch (parseError) {
-        console.error('Failed to parse API response:', text);
-        console.error('Parse error details:', parseError);
+        // console.error('Failed to parse API response:', text);
+        // console.error('Parse error details:', parseError);
         throw new Error('Failed to parse API response. Please try again.');
       }
     } catch (apiError) {
-      console.error('Gemini API error:', apiError);
+      // console.error('Gemini API error:', apiError);
       return NextResponse.json(
         { error: 'Failed to generate search results. Please check your API key and try again.' },
         { status: 500 }
       );
     }
   } catch (error) {
-    console.error('Search error:', error);
+    // console.error('Search error:', error);
     return NextResponse.json(
       { error: 'Failed to process search request. Please try again.' },
       { status: 500 }

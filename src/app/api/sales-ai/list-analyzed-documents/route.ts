@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from '@/utils/supabaseClient'; // Ensure this path i
 
 export async function GET(req: NextRequest) { // Using GET as we're fetching a list
     const functionName = "list-analyzed-documents-api";
-    console.log(`${functionName}: Received GET request.`);
+    // console.log(`${functionName}: Received GET request.`);
     let supabase;
     try {
         supabase = getSupabaseAdmin();
@@ -29,15 +29,15 @@ export async function GET(req: NextRequest) { // Using GET as we're fetching a l
             .limit(100); // Adjust limit as needed
 
         if (error) {
-            console.error(`${functionName} - Supabase error:`, error);
+            // console.error(`${functionName} - Supabase error:`, error);
             return NextResponse.json({ error: `Database error: ${error.message}` }, { status: 500 });
         }
 
-        console.log(`${functionName}: Found ${data?.length || 0} documents.`);
+        // console.log(`${functionName}: Found ${data?.length || 0} documents.`);
         return NextResponse.json({ success: true, documents: data || [] }, { status: 200 });
 
     } catch (e: any) {
-        console.error(`${functionName} - Error:`, e.message, e.stack);
+        // console.error(`${functionName} - Error:`, e.message, e.stack);
         return NextResponse.json({ error: e.message || "An unexpected error occurred." }, { status: 500 });
     }
 }

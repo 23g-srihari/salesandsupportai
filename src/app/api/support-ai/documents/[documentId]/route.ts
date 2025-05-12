@@ -30,7 +30,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
   }
   const authenticatedUserIdentifier = session.user.email;
 
-  console.log(`[API/documents DELETE] Attempting to delete document ID: ${documentId} for user: ${authenticatedUserIdentifier}`);
+  // console.log(`[API/documents DELETE] Attempting to delete document ID: ${documentId} for user: ${authenticatedUserIdentifier}`);
 
   try {
     // 1. Fetch the document to verify ownership and get storage details
@@ -44,7 +44,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
       if (fetchError.code === 'PGRST116') { // PostgREST error for "Fetched result contains 0 rows" 
         return NextResponse.json({ error: "Document not found." }, { status: 404 });
       }
-      console.error(`[API/documents DELETE] Error fetching document ${documentId}:`, fetchError);
+      // console.error(`[API/documents DELETE] Error fetching document ${documentId}:`, fetchError);
       return NextResponse.json({ error: `Database error fetching document: ${fetchError.message}` }, { status: 500 });
     }
 
@@ -54,7 +54,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
 
     // 2. Verify ownership
     if (document.uploaded_by_user_id !== authenticatedUserIdentifier) {
-      console.warn(`[API/documents DELETE] Unauthorized attempt by ${authenticatedUserIdentifier} to delete document ${documentId} owned by ${document.uploaded_by_user_id}`);
+      // console.warn(`[API/documents DELETE] Unauthorized attempt by ${authenticatedUserIdentifier} to delete document ${documentId} owned by ${document.uploaded_by_user_id}`);
       return NextResponse.json({ error: "Forbidden: You do not own this document." }, { status: 403 });
     }
 
@@ -68,12 +68,12 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
         .eq('source_document_id', documentId);
 
     if (chunkDeleteError) {
-        console.error(`[API/documents DELETE] Error deleting chunks for document ${documentId}:`, chunkDeleteError);
+        // console.error(`[API/documents DELETE] Error deleting chunks for document ${documentId}:`, chunkDeleteError);
         // Decide if this is a hard stop or if you try to delete the main doc & file anyway.
         // For now, let's treat it as a failure to ensure data integrity before file deletion.
         return NextResponse.json({ error: `Failed to delete associated document chunks: ${chunkDeleteError.message}` }, { status: 500 });
     }
-    console.log(`[API/documents DELETE] Successfully deleted chunks for document ${documentId}`);
+    // console.log(`[API/documents DELETE] Successfully deleted chunks for document ${documentId}`);
 
     // 4. Delete the document record from support_source_documents
     const { error: mainDocDeleteError } = await supabaseAdmin
@@ -82,20 +82,20 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
       .eq('id', documentId);
 
     if (mainDocDeleteError) {
-      console.error(`[API/documents DELETE] Error deleting main document record ${documentId}:`, mainDocDeleteError);
+      // console.error(`[API/documents DELETE] Error deleting main document record ${documentId}:`, mainDocDeleteError);
       return NextResponse.json({ error: `Failed to delete document record: ${mainDocDeleteError.message}` }, { status: 500 });
     }
-    console.log(`[API/documents DELETE] Successfully deleted main document record ${documentId}`);
+    // console.log(`[API/documents DELETE] Successfully deleted main document record ${documentId}`);
 
     // 5. Delete the file from Supabase Storage
     if (document.storage_path && document.storage_bucket_name) {
-      console.log(`[API/documents DELETE] Deleting from storage: bucket=${document.storage_bucket_name}, path=${document.storage_path}`);
+      // console.log(`[API/documents DELETE] Deleting from storage: bucket=${document.storage_bucket_name}, path=${document.storage_path}`);
       const { error: storageDeleteError } = await supabaseAdmin.storage
         .from(document.storage_bucket_name)
         .remove([document.storage_path]);
 
       if (storageDeleteError) {
-        console.error(`[API/documents DELETE] Error deleting file from storage for document ${documentId}:`, storageDeleteError);
+        // console.error(`[API/documents DELETE] Error deleting file from storage for document ${documentId}:`, storageDeleteError);
         // At this point, DB records are deleted. This is an orphaned file scenario.
         // Log this error carefully. You might return a success to the user but flag this internally.
         return NextResponse.json({ 
@@ -103,15 +103,15 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
             error: `Storage deletion failed: ${storageDeleteError.message}` 
         }, { status: 207 }); // 207 Multi-Status, as part of the operation succeeded
       }
-      console.log(`[API/documents DELETE] Successfully deleted file from storage for document ${documentId}`);
+      // console.log(`[API/documents DELETE] Successfully deleted file from storage for document ${documentId}`);
     } else {
-      console.warn(`[API/documents DELETE] Document ${documentId} had no storage_path or storage_bucket_name. Skipping storage deletion.`);
+      // console.warn(`[API/documents DELETE] Document ${documentId} had no storage_path or storage_bucket_name. Skipping storage deletion.`);
     }
 
     return NextResponse.json({ message: "Document and associated data deleted successfully." }, { status: 200 });
 
   } catch (error: any) {
-    console.error(`[API/documents DELETE] Unhandled error for document ${documentId}:`, error);
+    // console.error(`[API/documents DELETE] Unhandled error for document ${documentId}:`, error);
     return NextResponse.json({ error: `An unexpected error occurred: ${error.message}` }, { status: 500 });
   }
 }

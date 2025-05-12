@@ -61,7 +61,7 @@ let generativeModel: any;
 if (supabaseUrl && supabaseServiceRoleKey) {
   supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
 } else {
-  console.warn("Supabase URL or Service Role Key not provided. Supabase client for chat API not initialized.");
+  // console.warn("Supabase URL or Service Role Key not provided. Supabase client for chat API not initialized.");
 }
 
 if (geminiApiKey) {
@@ -79,7 +79,7 @@ if (geminiApiKey) {
     generationConfig,
   });
 } else {
-  console.warn("Gemini API Key not provided. Google AI clients for chat API not initialized.");
+  // console.warn("Gemini API Key not provided. Google AI clients for chat API not initialized.");
 }
 
 // Helper to format conversation history for the prompt string
@@ -108,9 +108,9 @@ export async function POST(req: NextRequest) {
     if (!userMessage) {
       return NextResponse.json({ error: "Message is required." }, { status: 400 });
     }
-    console.log("[Chat API] Received user message:", userMessage);
+    // console.log("[Chat API] Received user message:", userMessage);
     if (conversationHistory.length > 0) {
-        console.log("[Chat API] Received conversation history length:", conversationHistory.length);
+        // console.log("[Chat API] Received conversation history length:", conversationHistory.length);
     }
 
     const historyString = formatHistoryForPrompt(conversationHistory);
@@ -133,30 +133,30 @@ export async function POST(req: NextRequest) {
     let useRAG = !isLikelyConversational;
 
     if (!useRAG) {
-      console.log("[Chat API] Input classified as conversational. Responding directly.");
+      // console.log("[Chat API] Input classified as conversational. Responding directly.");
       finalPromptForGemini = `${historyString}${conversationalSystemPrompt}
 
 User: "${userMessage}"
 AI Assistant:`;
     } else {
-      console.log("[Chat API] Proceeding with RAG pipeline for:", userMessage);
+      // console.log("[Chat API] Proceeding with RAG pipeline for:", userMessage);
       
-      console.log("[Chat API] Embedding user query...");
+      // console.log("[Chat API] Embedding user query...");
       let queryEmbedding;
       try {
           const embedResult = await embeddingModel.embedContent(userMessage);
           queryEmbedding = embedResult.embedding.values;
       } catch (embedError) {
-          console.error("[Chat API] Error embedding user query:", embedError);
+          // console.error("[Chat API] Error embedding user query:", embedError);
           return NextResponse.json({ error: "Failed to process your query (embedding failed)." }, { status: 500 });
       }
       if (!queryEmbedding) {
-          console.error("[Chat API] Query embedding resulted in undefined.");
+          // console.error("[Chat API] Query embedding resulted in undefined.");
           return NextResponse.json({ error: "Failed to process your query (empty embedding)." }, { status: 500 });
       }
-      console.log("[Chat API] User query embedded.");
+      // console.log("[Chat API] User query embedded.");
 
-      console.log("[Chat API] Searching for relevant document chunks...");
+      // console.log("[Chat API] Searching for relevant document chunks...");
       const { data: chunks, error: rpcError } = await supabaseAdmin.rpc('match_support_document_chunks', {
         query_embedding: queryEmbedding,
         match_threshold: SIMILARITY_THRESHOLD,
@@ -164,18 +164,18 @@ AI Assistant:`;
       });
 
       if (rpcError) {
-        console.error("[Chat API] Error calling RPC for document matching:", rpcError);
+        // console.error("[Chat API] Error calling RPC for document matching:", rpcError);
         return NextResponse.json({ error: "Failed to search relevant documents." }, { status: 500 });
       }
 
       if (!chunks || chunks.length === 0) {
-        console.log("[Chat API] No relevant document chunks found for query:", userMessage);
+        // console.log("[Chat API] No relevant document chunks found for query:", userMessage);
         finalPromptForGemini = `${historyString}${getFallbackPromptNoChunks(userMessage)}
 
 User Message (that had no results): "${userMessage}"
 AI Assistant:`;
       } else {
-        console.log(`[Chat API] Found ${chunks.length} relevant chunks for query:`, userMessage);
+        // console.log(`[Chat API] Found ${chunks.length} relevant chunks for query:`, userMessage);
         const contextSnippets = chunks.map((chunk: any, index: number) => `Snippet ${index + 1}:\n${chunk.chunk_text}`).join("\n\n---\n\n");
         finalPromptForGemini = `${historyString}${ragSystemPrompt}
 
@@ -190,7 +190,7 @@ Answer:`;
       }
     }
 
-    console.log("[Chat API] Sending final prompt to Gemini generative model...");
+    // console.log("[Chat API] Sending final prompt to Gemini generative model...");
     // console.log("Full prompt for Gemini:", finalPromptForGemini); // For debugging
 
     // For models that support direct history array, this would be preferred:
@@ -203,14 +203,14 @@ Answer:`;
     if (response && typeof response.text === 'function') {
         aiResponseText = response.text();
     } else {
-        console.error("[Chat API] Unexpected response structure from Gemini model:", response);
+        // console.error("[Chat API] Unexpected response structure from Gemini model:", response);
     }
 
-    console.log("[Chat API] Received response from Gemini.");
+    // console.log("[Chat API] Received response from Gemini.");
     return NextResponse.json({ answer: aiResponseText });
 
   } catch (error: any) {
-    console.error("[Chat API] Unhandled error in POST handler:", error);
+    // console.error("[Chat API] Unhandled error in POST handler:", error);
     return NextResponse.json({ error: `An unexpected error occurred: ${error.message}` }, { status: 500 });
   }
 }

@@ -18,24 +18,25 @@ export async function GET(req: NextRequest) {
   }
   const authenticatedUserIdentifier = session.user.email;
 
+
   try {
-    console.log(`[API/documents GET] Fetching documents for user: ${authenticatedUserIdentifier}`);
+    // console.log(`[API/documents GET] Fetching documents for user: ${authenticatedUserIdentifier}`);
     const { data, error } = await supabaseAdmin
       .from('support_source_documents')
-      .select('id, file_name, mime_type, created_at, processing_status, size_bytes, original_drive_id')
+      .select('id, file_name, mime_type, created_at, processing_status, size_bytes')
       .eq('uploaded_by_user_id', authenticatedUserIdentifier)
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error("[API/documents GET] Error fetching documents:", error);
+      // console.error("[API/documents GET] Error fetching documents:", error);
       return NextResponse.json({ error: `Database error: ${error.message}` }, { status: 500 });
     }
 
-    console.log(`[API/documents GET] Successfully fetched ${data?.length || 0} documents for user: ${authenticatedUserIdentifier}`);
+    // console.log(`[API/documents GET] Successfully fetched ${data?.length || 0} documents for user: ${authenticatedUserIdentifier}`);
     return NextResponse.json(data || [], { status: 200 });
 
   } catch (error: any) {
-    console.error("[API/documents GET] Unhandled error:", error);
+    // console.error("[API/documents GET] Unhandled error:", error);
     return NextResponse.json({ error: `An unexpected error occurred: ${error.message}` }, { status: 500 });
   }
 }

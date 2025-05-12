@@ -21,7 +21,7 @@ export default function SearchResults({ results, isLoading, hasSearched, onProdu
   const [showEmailModal, setShowEmailModal] = useState(false);
 
   // Debug log to check incoming data
-  console.log('SearchResults received:', results);
+  // console.log('SearchResults received:', results);
 
   const handleCardClick = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
@@ -102,7 +102,7 @@ export default function SearchResults({ results, isLoading, hasSearched, onProdu
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {results.map((result) => {
               // Debug log for each result
-              console.log('Processing result:', result);
+              // console.log('Processing result:', result);
               
               const isExpanded = expandedId === result.id;
               const imageUrl = getImageUrl(result.imageUrl);

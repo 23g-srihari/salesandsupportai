@@ -158,7 +158,7 @@ export default function DriveFiles({ onClose }: DriveFilesProps) {
         body: JSON.stringify({ files: filesToUpload, uploaded_by: session.user?.email }),
       });
       const data = await res.json();
-      console.log('Upload API response:', data);
+      // console.log('Upload API response:', data);
       if (data.success) {
         setSuccessToast('Files uploaded to Supabase!');
         setSelectedFiles([]);

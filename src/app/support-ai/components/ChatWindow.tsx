@@ -45,7 +45,7 @@ function loadPickerScript(callback: () => void) {
     if (window.gapi && window.gapi.load) {
       window.gapi.load('picker', { callback });
     } else {
-      console.error("[ChatWindow] Google API script was loaded but gapi not available. Retrying script add.");
+      // console.error("[ChatWindow] Google API script was loaded but gapi not available. Retrying script add.");
       document.getElementById('google-picker-chat-script')?.remove(); // Remove old to re-add
       addScriptTag(callback);
     }
@@ -62,11 +62,11 @@ function addScriptTag(callback: () => void) {
         if (window.gapi && window.gapi.load) {
             window.gapi.load('picker', { callback });
         } else {
-            console.error("[ChatWindow] Failed to load Google Picker API even after script.onload.");
+            // console.error("[ChatWindow] Failed to load Google Picker API even after script.onload.");
         }
     };
     script.onerror = () => {
-        console.error("[ChatWindow] Error loading Google API script (script.onerror).");
+        // console.error("[ChatWindow] Error loading Google API script (script.onerror).");
     };
     document.body.appendChild(script);
 }
@@ -105,7 +105,7 @@ export default function ChatWindow() {
       sizeBytes: attachmentToProcess.size,
     };
 
-    console.log('[ChatWindow] Attempting to upload document immediately:', payload.fileName);
+    // console.log('[ChatWindow] Attempting to upload document immediately:', payload.fileName);
     try {
       const response = await fetch('/api/support-ai/upload-document', {
         method: 'POST',
@@ -114,7 +114,7 @@ export default function ChatWindow() {
       });
 
       const result = await response.json();
-      console.log('[ChatWindow] Response from /api/support-ai/upload-document:', result);
+      // console.log('[ChatWindow] Response from /api/support-ai/upload-document:', result);
 
       if (response.ok && result.success) {
         const systemMessage: Message = {
@@ -128,11 +128,11 @@ export default function ChatWindow() {
         setAttachmentForSend(null); // Clear the staged attachment preview from ChatInput
       } else {
         setPickerError(result.error || 'Failed to upload document. Please try again.');
-        console.error('[ChatWindow] Error uploading document:', result.error || `Status: ${response.status}`);
+        // console.error('[ChatWindow] Error uploading document:', result.error || `Status: ${response.status}`);
         // Keep attachmentForSend so user can see it and potentially retry or remove it if pickerError is shown.
       }
     } catch (error: any) {
-      console.error("[ChatWindow] Exception during document upload:", error);
+      // console.error("[ChatWindow] Exception during document upload:", error);
       setPickerError(`Upload failed: ${error.message}`);
     }
     setIsLoading(false);
@@ -157,7 +157,7 @@ export default function ChatWindow() {
         url: file.webViewLink || file.embedLink || file.alternateLink || file.url,
     };
 
-    console.log(`[ChatWindow] Fetching content for Drive file: ${file.name} (MIME: ${file.mimeType})`);
+    // console.log(`[ChatWindow] Fetching content for Drive file: ${file.name} (MIME: ${file.mimeType})`);
 
     // For types we want to send content for (used by /api/support-ai/upload-document)
     if (file.mimeType === 'application/vnd.google-apps.document') {
@@ -165,13 +165,13 @@ export default function ChatWindow() {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (res.ok) content = await res.text();
-      else console.error("[ChatWindow] Error fetching Google Doc content:", await res.text());
+      else { /* console.error("[ChatWindow] Error fetching Google Doc content:", await res.text()); */ }
     } else if (file.mimeType === 'text/plain') {
       const res = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (res.ok) content = await res.text();
-      else console.error("[ChatWindow] Error fetching plain text content:", await res.text());
+      else { /* console.error("[ChatWindow] Error fetching plain text content:", await res.text()); */ }
     } else if (file.mimeType === 'application/pdf') {
       const res = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -186,15 +186,15 @@ export default function ChatWindow() {
             reader.readAsDataURL(blob);
           });
         } else {
-          console.warn(`[ChatWindow] PDF ${file.name} too large (${blob.size} bytes) for base64 content. Will send as reference.`);
+          // console.warn(`[ChatWindow] PDF ${file.name} too large (${blob.size} bytes) for base64 content. Will send as reference.`);
           // Content remains null, API will handle it as reference or try fetching later if designed so
         }
-      } else console.error("[ChatWindow] Error fetching PDF content:", await res.text());
+      } else { /* console.error("[ChatWindow] Error fetching PDF content:", await res.text()); */ }
     } else if (file.mimeType.startsWith('image/')) {
-      console.log(`[ChatWindow] Image ${file.name} selected. URL will be used. No content fetched by client.`);
+      // console.log(`[ChatWindow] Image ${file.name} selected. URL will be used. No content fetched by client.`);
       // For images, content usually remains null for this flow; API might just use metadata or URL
     } else {
-      console.log(`[ChatWindow] Content fetching not standard for MIME type: ${file.mimeType}. Will send as reference.`);
+      // console.log(`[ChatWindow] Content fetching not standard for MIME type: ${file.mimeType}. Will send as reference.`);
     }
     return { ...commonReturn, content };
   };
@@ -226,10 +226,10 @@ export default function ChatWindow() {
         setPickerError("Failed to process selected file from Google Drive. Please try again.");
       }
     } else if (data.action === window.google.picker.Action.CANCEL) {
-      console.log('[ChatWindow] Google Picker selection cancelled by user.');
+      // console.log('[ChatWindow] Google Picker selection cancelled by user.');
       setPickerError(null); // Clear error if user just cancels
     } else {
-      console.log("[ChatWindow] Unknown Picker action:", data.action, data);
+      // console.log("[ChatWindow] Unknown Picker action:", data.action, data);
     }
   };
 
@@ -237,7 +237,7 @@ export default function ChatWindow() {
   const createPicker = () => {
     if (!(session as any)?.accessToken || !apiKey) {
       setPickerError("Google Drive access is not available: Missing API key or access token.");
-      console.error("[ChatWindow] Picker creation failed: API key or access token missing.", { apiKey: !!apiKey, token: !!(session as any)?.accessToken });
+      // console.error("[ChatWindow] Picker creation failed: API key or access token missing.", { apiKey: !!apiKey, token: !!(session as any)?.accessToken });
       setPickerLoading(false);
       if (!(session as any)?.accessToken && authStatus !== 'loading') {
         signIn('google', { callbackUrl: window.location.href }); // Ensure Drive scopes are requested
@@ -271,7 +271,7 @@ export default function ChatWindow() {
     }
     if (authStatus === 'authenticated' && !(session as any)?.accessToken) {
         // Authenticated with NextAuth, but Google access token might be missing (e.g. scopes not granted, error in token storage)
-        console.warn("[ChatWindow] User authenticated but Google access token missing. Re-initiating sign-in for Drive scopes.");
+        // console.warn("[ChatWindow] User authenticated but Google access token missing. Re-initiating sign-in for Drive scopes.");
         signIn('google', { callbackUrl: window.location.href }); // Re-prompt to ensure Drive scopes are granted
         return;
     }
@@ -306,7 +306,7 @@ export default function ChatWindow() {
         // For this refactor, we assume pickerCallback handles the upload path.
         // If the user *manually* clicks send while an attachment preview (from a failed auto-upload) is visible,
         // we can try re-processing it.
-        console.log("[ChatWindow] Send button clicked with a staged attachment. Re-attempting upload.");
+        // console.log("[ChatWindow] Send button clicked with a staged attachment. Re-attempting upload.");
         await processAndUploadAttachment(localAttachmentForSend);
         // If there was also inputText, we might want to send it after the attachment attempt, or ignore it for this action.
         // For now, if an attachment is present, this action will focus on it.
@@ -328,21 +328,21 @@ export default function ChatWindow() {
       setMessages(prevMessages => [...prevMessages, newUserMessage]);
       
       try {
-        console.log('[ChatWindow] Sending to /api/support-ai/chat, message:', trimmedInputText);
+        // console.log('[ChatWindow] Sending to /api/support-ai/chat, message:', trimmedInputText);
 
         // Prepare conversation history
         const historyForAPI = messages
           .slice(-MAX_CONVERSATION_HISTORY) 
           .map(msg => ({
             role: msg.sender === 'user' ? 'user' : 'model',
-            parts: [{ text: msg.text }]
-          }));
+          parts: [{ text: msg.text }]
+        }));
         
         const apiRequestBody = {
           message: trimmedInputText,
           conversationHistory: historyForAPI 
         };
-        console.log('[ChatWindow] Request body for chat API:', apiRequestBody);
+        // console.log('[ChatWindow] Request body for chat API:', apiRequestBody);
 
         const response = await fetch('/api/support-ai/chat', {
           method: 'POST',
@@ -350,9 +350,9 @@ export default function ChatWindow() {
           body: JSON.stringify(apiRequestBody),
         });
 
-        console.log('[ChatWindow] Response status from /api/support-ai/chat:', response.status, response.statusText);
+        // console.log('[ChatWindow] Response status from /api/support-ai/chat:', response.status, response.statusText);
         const result = await response.json(); 
-        console.log('[ChatWindow] Response JSON from /api/support-ai/chat:', result);
+        // console.log('[ChatWindow] Response JSON from /api/support-ai/chat:', result);
 
         if (response.ok && result.answer) {
           const botResponse: Message = { 
@@ -373,10 +373,10 @@ export default function ChatWindow() {
             name: 'System Error',
           };
           setMessages(prevMessages => [...prevMessages, errorBotResponse]);
-          console.error('[ChatWindow] Error from /api/support-ai/chat API:', errorMessage);
+          // console.error('[ChatWindow] Error from /api/support-ai/chat API:', errorMessage);
         }
       } catch (error: any) { 
-        console.error('[ChatWindow] Network or other error sending chat message:', error);
+        // console.error('[ChatWindow] Network or other error sending chat message:', error);
         const networkErrorResponse: Message = { 
           id: String(Date.now() + 1),
           text: `Network error: ${error.message || 'Could not connect to the server.'}`,
@@ -388,7 +388,7 @@ export default function ChatWindow() {
       }
       setIsLoading(false);
     } else if (trimmedInputText === '') {
-        console.log('[ChatWindow] Send called with no attachment and no input text.');
+        // console.log('[ChatWindow] Send called with no attachment and no input text.');
     }
   };
 

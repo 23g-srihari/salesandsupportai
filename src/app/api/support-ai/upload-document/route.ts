@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     if (!content && mimeType !== 'image/jpeg' && mimeType !== 'image/png') {
         // For non-image types that we expect to process, content is usually required
         // Or, if content is null, the Edge Function will need to fetch it from googleDriveUrl
-        console.warn(`Content not provided for ${fileName} of type ${mimeType}. Edge function might need to fetch it.`);
+        // console.warn(`Content not provided for ${fileName} of type ${mimeType}. Edge function might need to fetch it.`);
     }
 
     const BUCKET_NAME = 'supportchatattachments';
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
         }
         else {
             // If content is provided but not in expected format for direct upload here for these types
-            console.warn(`Content for ${fileName} (${mimeType}) is present but not in a recognized direct-upload format. It will be stored as is or requires different handling.`);
+            // console.warn(`Content for ${fileName} (${mimeType}) is present but not in a recognized direct-upload format. It will be stored as is or requires different handling.`);
             // For simplicity, let's assume if content is there for other types, it's raw string or needs specific handling
             // This part might need refinement based on what client sends for unhandled types with content
              fileDataForUpload = content; // Could be problematic if not string/Buffer
@@ -81,10 +81,10 @@ export async function POST(req: NextRequest) {
                 });
 
             if (storageError) {
-                console.error('Supabase Storage Error:', storageError);
+                // console.error('Supabase Storage Error:', storageError);
                 uploadError = storageError.message;
             } else if (storageUploadData) {
-                console.log(`File uploaded to Storage: ${storageUploadData.path}`);
+                // console.log(`File uploaded to Storage: ${storageUploadData.path}`);
                 // Get public URL if needed, though usually not required for backend processing
                 // const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(storagePath);
                 // publicUrl = urlData?.publicUrl;
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (dbError) {
-      console.error('Supabase DB Insert Error:', dbError);
+      // console.error('Supabase DB Insert Error:', dbError);
       // If storage upload happened, consider cleanup or marking as error
       return NextResponse.json({ error: `Database insert failed: ${dbError.message}` }, { status: 500 });
     }
@@ -132,11 +132,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Failed to create document record in database.' }, { status: 500 });
     }
 
-    console.log('Document record created:', dbData.id);
+    // console.log('Document record created:', dbData.id);
 
     // Manually invoke the 'extract-text-from-support-pdf' function
     // This mirrors how sales-ai invokes its first processing function.
-    console.log(`[API] Invoking 'extract-text-from-support-pdf' for doc ID: ${dbData.id}`);
+    // console.log(`[API] Invoking 'extract-text-from-support-pdf' for doc ID: ${dbData.id}`);
     const { data: functionResponse, error: functionError } = await supabase.functions.invoke('extract-text-from-support-pdf', {
         body: {
             sourceDocumentId: dbData.id, // Pass the ID of the record in support_source_documents
@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (functionError) {
-        console.error(`[API] Error invoking 'extract-text-from-support-pdf' function:`, functionError);
+        // console.error(`[API] Error invoking 'extract-text-from-support-pdf' function:`, functionError);
         // Even if function invocation fails, the document is uploaded. 
         // The function itself should handle its own status updates if it starts.
         // We might want to update the local record if invocation itself is an immediate error.
@@ -164,7 +164,7 @@ export async function POST(req: NextRequest) {
         }, { status: 202 }); // 202 Accepted, but with issues
     }
 
-    console.log(`[API] 'extract-text-from-support-pdf' function invoked. Response:`, functionResponse);
+    // console.log(`[API] 'extract-text-from-support-pdf' function invoked. Response:`, functionResponse);
 
     return NextResponse.json({
       success: true,
@@ -175,7 +175,7 @@ export async function POST(req: NextRequest) {
     }, { status: 201 }); // 201 Created
 
   } catch (error: any) {
-    console.error('Overall error in /api/support-ai/upload-document:', error);
+    // console.error('Overall error in /api/support-ai/upload-document:', error);
     return NextResponse.json({ error: `An unexpected error occurred: ${error.message}` }, { status: 500 });
   }
 }
