@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
       // console.error(`Error fetching document ${documentId} for deletion:`, fetchError);
       if (fetchError.code === 'PGRST116') { // Not found
           return NextResponse.json({ success: false, error: 'Document not found.' }, { status: 404 });
+      } // Added missing closing brace
       return NextResponse.json({ success: false, error: 'Failed to fetch document details.' }, { status: 500 });
     }
 
