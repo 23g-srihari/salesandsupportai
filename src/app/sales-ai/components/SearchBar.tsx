@@ -122,15 +122,13 @@ export default function SearchBar({ onSearch, isLoading, onDriveClick }: SearchB
     // Removed window.confirm() to delete immediately on click
     setDeletingDocId(docId);
     try {
-      const response = await fetch('/api/sales-ai/delete-document', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ documentId: docId }),
+      // Refactored to use DELETE method and dynamic route
+      const response = await fetch(`/api/sales-ai/documents/${docId}`, {
+          method: 'DELETE',
+          // No need for headers or body for a simple DELETE by ID in the URL
         });
         const data = await response.json();
-        if (data.success) {
+        if (response.ok) { // Check response.ok for success with DELETE method
           toast.success(`Document "${docName}" deleted successfully.`);
           setDocumentList(prev => prev.filter(d => d.id !== docId));
           if (selectedDoc?.id === docId) {

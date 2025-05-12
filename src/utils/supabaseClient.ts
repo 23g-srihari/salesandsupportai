@@ -5,6 +5,9 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // For server-side admin
 
+// ADD THIS LOG
+console.log("UTILS/SUPABASECLIENT: Initializing. SUPABASE_SERVICE_ROLE_KEY is:", supabaseServiceRoleKey ? "SET" : "NOT SET or undefined");
+
 if (!supabaseUrl) {
   throw new Error("Missing env.NEXT_PUBLIC_SUPABASE_URL");
 }

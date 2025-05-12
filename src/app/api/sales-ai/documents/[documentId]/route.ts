@@ -4,10 +4,22 @@ import { getSupabaseAdmin } from '@/utils/supabaseClient';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/utils/authOptions"; // Import authOptions from the utility file
 
-const BUCKET_NAME = 'user_document_uploads'; // Ensure this matches your actual bucket name
+const BUCKET_NAME = 'drivefiles'; // Ensure this matches your actual bucket name
 // temporary comment
 
-export async function POST(request: NextRequest) {
+interface RouteParams {
+  params: {
+    documentId: string;
+  };
+}
+
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const { documentId } = params;
+
+  if (!documentId) {
+    return NextResponse.json({ success: false, error: 'Invalid document ID provided.' }, { status: 400 });
+  }
+
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user?.email) {
@@ -20,12 +32,6 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
-    const { documentId } = body;
-
-    if (!documentId || typeof documentId !== 'string') {
-      return NextResponse.json({ success: false, error: 'Invalid document ID provided.' }, { status: 400 });
-    }
 
     // 1. Fetch the document record
     const { data: documentRecord, error: fetchError } = await supabase

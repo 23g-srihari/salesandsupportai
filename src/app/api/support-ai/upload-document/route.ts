@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid'; // For generating unique filenames or IDs i
 
 // Ensure you have the necessary types from next-auth if you need user session
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route" // Please verify this path is correct
+import { authOptions } from "@/utils/authOptions"
 
 export async function POST(req: NextRequest) {
   const supabase = getSupabaseAdmin();

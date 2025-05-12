@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { SearchResult } from '@/app/sales-ai/types';
-import { supabase } from '@/utils/supabaseClient';
+import { supabase, getSupabaseAdmin } from '@/utils/supabaseClient'; // Added getSupabaseAdmin
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/utils/authOptions";
 
 // Initialize Gemini API
 const apiKey = process.env.GEMINI_API_KEY;
@@ -162,6 +164,36 @@ export async function POST(request: Request) {
     if (documentId) {
       // console.log(`Vector search within document ID: ${documentId} for query: "${query}"`);
       try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.email) {
+          return NextResponse.json(
+            { error: "Authentication required to search within a document." },
+            { status: 401 }
+          );
+        }
+        const userEmail = session.user.email;
+
+        // Verify document ownership
+        const supabaseAdmin = getSupabaseAdmin(); // Use admin client for direct table access
+        const { data: documentOwner, error: ownerError } = await supabaseAdmin
+          .from('uploaded_files')
+          .select('uploaded_by')
+          .eq('id', documentId)
+          .single();
+
+        if (ownerError) {
+          // console.error("Error fetching document owner:", ownerError);
+          return NextResponse.json({ error: "Error verifying document ownership." }, { status: 500 });
+        }
+
+        if (!documentOwner || documentOwner.uploaded_by !== userEmail) {
+          return NextResponse.json(
+            { error: "You do not have permission to search within this document." },
+            { status: 403 }
+          );
+        }
+
+        // Original logic for document search continues here if ownership is verified
         const queryEmbedding = await getQueryEmbedding(query);
         const parsedQuery = parseDocumentQuery(query); // Call parser to get category and other info
 
@@ -169,11 +201,10 @@ export async function POST(request: Request) {
           // console.error('Failed to generate query embedding. Cannot perform vector search.');
           // Fallback to text-based filtering if embedding fails, now using the parsedQuery from above.
           // console.log('Falling back to text-based filtering due to embedding failure.');
-          // const parsedQuery = parseDocumentQuery(query); // Already called above
-          let queryBuilder = supabase
+          let queryBuilder = supabase // Using the user client here for RLS if applicable to analyzed_products
             .from('analyzed_products')
             .select('*')
-            .eq('uploaded_file_id', documentId);
+            .eq('uploaded_file_id', documentId); // This is safe as documentId ownership is verified
           if (parsedQuery.category) {
             queryBuilder = queryBuilder.ilike('product_type', `%${parsedQuery.category}%`);
           }
@@ -194,6 +225,7 @@ export async function POST(request: Request) {
             let discountPercentage = 0;
             let isOnSale = false;
             let currency = 'INR'; // Default currency
+            const imageUrl = product.image_url || ''; // Assuming 'image_url' column exists
 
             if (product.price && typeof product.price === 'string') {
                 // Basic parsing for string prices like "1000", "1,000", "₹1000", "1000 INR"
@@ -231,11 +263,13 @@ export async function POST(request: Request) {
              if (originalPrice === 0) originalPrice = priceAmount; // Ensure original price is at least the sale price
 
 
+
             return {
                 id: product.id.toString(),
                 title: product.product_name || 'N/A',
                 description: product.analysis_summary || 'No summary available.',
                 category: product.product_type || 'General',
+                imageUrl: imageUrl,
                 keyFeatures: [], 
                 features: product.features && (Array.isArray(product.features) || typeof product.features === 'object') 
                             ? Object.values(product.features).map((f: any) => ({ name: typeof f === 'string' ? f : JSON.stringify(f), description: '', benefit: '' })) 
@@ -315,6 +349,7 @@ export async function POST(request: Request) {
             let discountPercentage = 0;
             let isOnSale = false;
             let currency = 'INR'; // Default currency
+            const imageUrl = product.image_url || ''; // Assuming 'image_url' column exists
 
             // Price parsing for string fields from SQL function
             if (product.price && typeof product.price === 'string') {
@@ -362,14 +397,15 @@ export async function POST(request: Request) {
             };
 
 
+
             return {
                 id: product.id.toString(),
                 title: product.product_name || 'N/A',
                 description: product.analysis_summary || 'No summary available.',
                 category: product.product_type || 'General',
+                imageUrl: imageUrl,
                 keyFeatures: [], // Populate if you have specific logic for this from RPC results
                 features: mapJsonbFeatures(product.features),
-                pros: mapJsonbArray(product.pros),
                 cons: mapJsonbArray(product.cons),
                 whyBuy: product.why_should_i_buy || 'Information not available.',
                 price: {

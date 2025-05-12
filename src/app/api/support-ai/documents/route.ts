@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"; // Adjust path as needed
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+import { authOptions } from "@/utils/authOptions"; // Adjust path as needed
 
 export async function GET(req: NextRequest) {
+  console.log("SUPPORT-AI DOCS: SUPABASE_SERVICE_ROLE_KEY is:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "SET" : "NOT SET"); // <-- ADD THIS LINE
+  console.log("SUPPORT-AI DOCS: NEXT_PUBLIC_SUPABASE_URL is:", process.env.NEXT_PUBLIC_SUPABASE_URL ? "SET" : "NOT SET"); // <-- ADD THIS LINE
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
   if (!supabaseUrl || !supabaseServiceRoleKey) {
     return NextResponse.json({ error: "Server configuration error: Supabase credentials missing." }, { status: 500 });
   }
