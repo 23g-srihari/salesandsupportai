@@ -26,19 +26,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid document ID provided.' }, { status: 400 });
     }
 
-    // 1. Fetch the document record to get storage_path and verify ownership
+    // 1. Fetch the document record
     const { data: documentRecord, error: fetchError } = await supabase
       .from('uploaded_files')
       .select('id, uploaded_by, storage_path, name')
       .eq('id', documentId)
       .single();
 
-
     if (fetchError) {
       // console.error(`Error fetching document ${documentId} for deletion:`, fetchError);
       if (fetchError.code === 'PGRST116') { // Not found
-          return NextResponse.json({ success: false, error: 'Document not found.' }, { status: 404 });
-      } // Added missing closing brace
+        return NextResponse.json({ success: false, error: 'Document not found.' }, { status: 404 });
+      }
       return NextResponse.json({ success: false, error: 'Failed to fetch document details.' }, { status: 500 });
     }
 
@@ -46,10 +45,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Document not found.' }, { status: 404 });
     }
 
-    // 2. Authorization: Check if the current user owns the document
-    //    TODO: Implement admin override if needed
+    // 2. Authorization
     if (documentRecord.uploaded_by !== session.user.email) {
-      // console.warn(`Unauthorized delete attempt for document ${documentId} by user ${session.user.email}. Owner: ${documentRecord.uploaded_by}`);
+      // console.warn(`Unauthorized delete attempt by user ${session.user.email}`);
       return NextResponse.json({ success: false, error: 'Unauthorized: You do not own this document.' }, { status: 403 });
     }
 
@@ -60,28 +58,26 @@ export async function POST(request: NextRequest) {
       .eq('uploaded_file_id', documentId);
 
     if (analyzedProductsDeleteError) {
-      // console.error(`Error deleting associated analyzed products for document ${documentId}:`, analyzedProductsDeleteError);
-      // Decide if this is a hard stop or if you proceed to delete the main file anyway
-      // For now, we'll log and proceed, but you might want to make this transactional or halt.
+      // console.error(`Error deleting associated products for document ${documentId}:`, analyzedProductsDeleteError);
+      // Optionally, handle this error more gracefully or make it part of a transaction
     } else {
-      // console.log(`Successfully deleted associated analyzed products for document ${documentId}`);
+      // console.log(`Successfully deleted associated products for document ${documentId}`);
     }
 
-    // 4. Delete file from Supabase Storage (if storage_path exists)
+    // 4. Delete file from Supabase Storage
     if (documentRecord.storage_path) {
       const { error: storageDeleteError } = await supabase.storage
-        .from(BUCKET_NAME) // Use the constant
-        .remove([documentRecord.storage_path]); // remove expects an array of paths
+        .from(BUCKET_NAME)
+        .remove([documentRecord.storage_path]);
 
       if (storageDeleteError) {
-        // console.error(`Error deleting file ${documentRecord.storage_path} from storage for document ${documentId}:`, storageDeleteError);
-        // Log this error, but proceed to delete the DB record as the primary source of truth.
-        // Orphaned storage files might need a separate cleanup job.
+        // console.error(`Error deleting file from storage for document ${documentId}:`, storageDeleteError);
+        // Log this error, but proceed to delete the DB record.
       } else {
-        // console.log(`Successfully deleted file ${documentRecord.storage_path} from storage for document ${documentId}`);
+        // console.log(`Successfully deleted file from storage for document ${documentId}`);
       }
     } else {
-        // console.log(`No storage_path for document ${documentId}, skipping storage deletion.`);
+      // console.log(`No storage_path for document ${documentId}, skipping storage deletion.`);
     }
 
     // 5. Delete the record from 'uploaded_files' table
@@ -95,12 +91,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Failed to delete document record from database.' }, { status: 500 });
     }
 
-    // console.log(`Successfully deleted document ${documentId} (name: ${documentRecord.name}) by user ${session.user.email}`);
+    // console.log(`Successfully deleted document ${documentId} by user ${session.user.email}`);
     return NextResponse.json({ success: true, message: `Document "${documentRecord.name}" deleted successfully.` });
 
   } catch (error: any) {
-    // console.error('Critical error in delete-document API:', error);
-    return NextResponse.json({ success: false, error: error.message || 'An unexpected error occurred.' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+    // console.error('Critical error in delete-document API:', errorMessage);
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }
 
+// Ensure there's a newline character after this final brace
