@@ -66,8 +66,10 @@ function parseDocumentQuery(query: string): ParsedDocQuery {
   let maxPrice: number | undefined;
   let category: string | undefined;
 
+  interface UnitMultipliers { [key: string]: number; }
+
   // Price parsing (lakh, crore, under, above, between)
-  const pricePatterns = [
+  const pricePatterns: { regex: RegExp; type: string; unitMultiplier: UnitMultipliers }[] = [
     { regex: /under\s*(\d*\.?\d+)\s*(lakh|l|crore|cr|k)/i, type: 'max', unitMultiplier: { l: 100000, lakh: 100000, cr: 10000000, crore: 10000000, k: 1000 } },
     { regex: /under\s*(\d+\.?\d*)/i, type: 'max', unitMultiplier: {} },
     { regex: /below\s*(\d*\.?\d+)\s*(lakh|l|crore|cr|k)/i, type: 'max', unitMultiplier: { l: 100000, lakh: 100000, cr: 10000000, crore: 10000000, k: 1000 } },
