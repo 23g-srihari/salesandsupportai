@@ -92,6 +92,7 @@ export async function POST(req: NextRequest) {
         uploaded_by: uploaded_by || null,
         status: storagePath ? 'pending_extraction' : 'upload_to_storage_failed', 
         error_message: uploadError || null,
+        context: 'sales_ai', // Added context for Sales AI
       };
       dbRowsToInsert.push(rowToInsert);
     }

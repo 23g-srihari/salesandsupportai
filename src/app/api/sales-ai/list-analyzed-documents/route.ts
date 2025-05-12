@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) { // Using GET as we're fetching a l
         const { data, error } = await supabase
             .from('uploaded_files') // Ensure this is your table name for uploaded files
             .select('id, name, created_at, status, mime_type') 
+            .eq('context', 'sales_ai') // Added filter for sales_ai context
             .in('status', searchableStatuses) 
             .order('created_at', { ascending: false })
             .limit(100); // Adjust limit as needed

@@ -191,8 +191,8 @@ export default function DriveFiles({ onClose }: DriveFilesProps) {
         {/* Header */}
         <div className="flex flex-col items-center mb-6">
           <FaGoogleDrive className="text-5xl text-green-400 drop-shadow mb-2 animate-bounce-slow" />
-          <h2 className="text-2xl sm:text-3xl font-bold text-green-200 tracking-tight mb-1">Google Drive Picker</h2>
-          <p className="text-gray-400 text-sm">Select files directly from your Drive</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-green-200 tracking-tight mb-1">Connect to Google Drive</h2>
+          {/* <p className="text-gray-400 text-sm">Select files directly from your Drive</p> REMOVED */}
         </div>
 
         {/* Auth State */}

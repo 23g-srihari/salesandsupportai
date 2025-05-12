@@ -18,3 +18,14 @@ entrypoint = "./functions/salesai-analyze-text/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/salesai-analyze-text/*.html" ]
+[functions.extract-text-from-support-pdf]
+  enabled = true
+  verify_jwt = true
+  import_map = "./functions/extract-text-from-support-pdf/deno.json"
+  entrypoint = "./functions/extract-text-from-support-pdf/index.ts"
+
+[functions.analyze-embed-support-docs]
+  enabled = true
+  verify_jwt = false
+  import_map = "./functions/analyze-embed-support-docs/deno.json"
+  entrypoint = "./functions/analyze-embed-support-docs/index.ts"
